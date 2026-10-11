@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getProductById } from "@/lib/api";
 
+export const instant = false;
+
 type Market = {
   market: string;
   division: string;

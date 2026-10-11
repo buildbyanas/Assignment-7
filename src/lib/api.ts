@@ -1,44 +1,37 @@
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export async function getProducts() {
-  const response = await fetch(`${API_BASE_URL}/products`);
+function getApiUrl(path: string) {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL সেট করা নেই");
+  }
+
+  return `${API_BASE_URL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+
+async function fetchApi(path: string) {
+  const response = await fetch(getApiUrl(path), {
+    cache: "no-store",
+  });
 
   if (!response.ok) {
-    throw new Error("Products load করতে সমস্যা হয়েছে");
+    throw new Error(`API request ব্যর্থ হয়েছে: ${response.status}`);
   }
 
   return response.json();
+}
+
+export async function getProducts() {
+  return fetchApi("products");
 }
 
 export async function getProductById(id: string) {
-  const response = await fetch(`${API_BASE_URL}/products/${id}`);
-
-  if (!response.ok) {
-    throw new Error("Product details load করা যায়নি");
-  }
-
-  return response.json();
+  return fetchApi(`products/${encodeURIComponent(id)}`);
 }
 
 export async function getCategories() {
-  const response = await fetch(`${API_BASE_URL}/categories`);
-
-  if (!response.ok) {
-    throw new Error("Categories load করতে সমস্যা হয়েছে");
-  }
-
-  return response.json();
+  return fetchApi("categories");
 }
 
 export async function getCategoryBySlug(slug: string) {
-  const response = await fetch(
-    `${API_BASE_URL}/categories/${encodeURIComponent(slug)}`
-  );
-
-  if (!response.ok) {
-    throw new Error("Category load করা যায়নি");
-  }
-
-  return response.json();
+  return fetchApi(`categories/${encodeURIComponent(slug)}`);
 }

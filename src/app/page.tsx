@@ -3,6 +3,8 @@ import HeroSection from "@/components/HeroSection";
 import SortableProductGrid from "@/components/SortableProductGrid";
 import { getProducts } from "@/lib/api";
 
+export const instant = false;
+
 type Product = {
   id: number;
   slug: string;
@@ -35,9 +37,7 @@ function ProductCard({ product }: { product: Product }) {
           <h3 className="truncate text-sm font-semibold text-[#202820]">
             {product.nameBn}
           </h3>
-          <p className="text-[11px] text-[#697469]">
-            {product.categoryNameBn}
-          </p>
+          <p className="text-[11px] text-[#697469]">{product.categoryNameBn}</p>
         </div>
       </div>
 
@@ -55,13 +55,10 @@ function ProductCard({ product }: { product: Product }) {
         {product.change && (
           <span
             className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-medium ${
-              isUp
-                ? "bg-red-50 text-red-600"
-                : "bg-green-50 text-green-700"
+              isUp ? "bg-red-50 text-red-600" : "bg-green-50 text-green-700"
             }`}
           >
-            {isUp ? "▲" : "▼"}{" "}
-            {product.change.pct.toLocaleString("bn-BD")}%
+            {isUp ? "▲" : "▼"} {product.change.pct.toLocaleString("bn-BD")}%
           </span>
         )}
       </div>
@@ -82,9 +79,7 @@ function ProductSection({
     <section>
       <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-[#202820]">
         <span
-          className={
-            direction === "up" ? "text-red-600" : "text-green-700"
-          }
+          className={direction === "up" ? "text-red-600" : "text-green-700"}
         >
           {direction === "up" ? "▲" : "▼"}
         </span>
@@ -92,9 +87,7 @@ function ProductSection({
       </h2>
 
       {products.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          কোনো পণ্যের তথ্য পাওয়া যায়নি।
-        </p>
+        <p className="text-sm text-gray-500">কোনো পণ্যের তথ্য পাওয়া যায়নি।</p>
       ) : (
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
@@ -114,7 +107,7 @@ export default async function Home() {
 
     const result = Array.isArray(response)
       ? response
-      : response?.products ?? response?.data ?? [];
+      : (response?.products ?? response?.data ?? []);
 
     products = Array.isArray(result) ? result : [];
   } catch (error) {
@@ -148,9 +141,7 @@ export default async function Home() {
 
         <section id="all-products">
           <div className="mb-3">
-            <h2 className="text-base font-bold text-[#202820]">
-              সকল পণ্য
-            </h2>
+            <h2 className="text-base font-bold text-[#202820]">সকল পণ্য</h2>
           </div>
 
           {products.length === 0 ? (
