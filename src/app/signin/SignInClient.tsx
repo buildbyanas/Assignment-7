@@ -1,9 +1,9 @@
-
 "use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
 export default function SignInClient() {
@@ -20,7 +20,6 @@ export default function SignInClient() {
   const getCallbackURL = () => {
     const callbackURL = searchParams.get("callbackURL");
 
-    // Only allow internal paths.
     if (
       callbackURL &&
       callbackURL.startsWith("/") &&
@@ -36,14 +35,20 @@ export default function SignInClient() {
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
+    if (isLoading) return;
+
     setError("");
 
     if (!email.trim() || !password) {
-      setError("ইমেইল ও পাসওয়ার্ড লিখুন।");
+      const message = "ইমেইল ও পাসওয়ার্ড লিখুন।";
+      setError(message);
+      toast.error(message);
       return;
     }
 
     setIsLoading(true);
+    const toastId = toast.loading("সাইন ইন হচ্ছে...");
 
     try {
       const { error: authError } = await authClient.signIn.email({
@@ -53,17 +58,25 @@ export default function SignInClient() {
       });
 
       if (authError) {
-        setError(
+        const message =
           authError.message ||
-            "লগইন করা যায়নি। ইমেইল ও পাসওয়ার্ড যাচাই করুন।"
-        );
+          "লগইন করা যায়নি। ইমেইল ও পাসওয়ার্ড যাচাই করুন।";
+
+        setError(message);
+        toast.error(message, { id: toastId });
         return;
       }
+
+      toast.success("সফলভাবে সাইন ইন হয়েছে!", { id: toastId });
 
       router.replace(getCallbackURL());
       router.refresh();
     } catch {
-      setError("সার্ভারের সঙ্গে সংযোগ করা যায়নি। আবার চেষ্টা করুন।");
+      const message =
+        "সার্ভারের সঙ্গে সংযোগ করা যায়নি। আবার চেষ্টা করুন।";
+
+      setError(message);
+      toast.error(message, { id: toastId });
     } finally {
       setIsLoading(false);
     }
@@ -72,8 +85,16 @@ export default function SignInClient() {
   const handleSocialSignIn = async (
     provider: "google" | "github"
   ) => {
+    if (isLoading) return;
+
     setError("");
     setIsLoading(true);
+
+    const toastId = toast.loading(
+      provider === "google"
+        ? "Google দিয়ে সাইন ইন হচ্ছে..."
+        : "GitHub দিয়ে সাইন ইন হচ্ছে..."
+    );
 
     try {
       const { error: socialError } = await authClient.signIn.social({
@@ -82,14 +103,25 @@ export default function SignInClient() {
       });
 
       if (socialError) {
-        setError(
+        const message =
           socialError.message ||
-            "সোশ্যাল লগইন করা যায়নি। আবার চেষ্টা করুন।"
-        );
+          "সোশ্যাল লগইন করা যায়নি। আবার চেষ্টা করুন।";
+
+        setError(message);
+        toast.error(message, { id: toastId });
         setIsLoading(false);
+        return;
       }
+
+      // Social sign-in সাধারণত অন্য পেজে Redirect করে।
+      // Redirect শুরু হলে Loading Toast-কে আলাদা Success Toast দিয়ে
+      // প্রতিস্থাপন করা হবে না।
     } catch {
-      setError("সার্ভারের সঙ্গে সংযোগ করা যায়নি। আবার চেষ্টা করুন।");
+      const message =
+        "সার্ভারের সঙ্গে সংযোগ করা যায়নি। আবার চেষ্টা করুন।";
+
+      setError(message);
+      toast.error(message, { id: toastId });
       setIsLoading(false);
     }
   };

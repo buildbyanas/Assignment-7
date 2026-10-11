@@ -4,6 +4,7 @@ import "./globals.css";
 import Marquee from "@/components/Marquee";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar />
         <Marquee />
         {children}
+        <Toaster position="top-right" />
         <Footer />
       </body>
     </html>

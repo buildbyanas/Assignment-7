@@ -1,10 +1,10 @@
-
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
 export default function ProfilePage() {
@@ -13,8 +13,6 @@ export default function ProfilePage() {
   const user = session?.user;
 
   const [name, setName] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -32,27 +30,30 @@ export default function ProfilePage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setSuccess("");
+
+    if (isSaving || isLoggingOut) return;
 
     const trimmedName = name.trim();
 
     if (!trimmedName) {
-      setError("আপনার নাম লিখুন।");
+      toast.error("আপনার নাম লিখুন।");
       return;
     }
 
     if (trimmedName.length > 100) {
-      setError("নাম সর্বোচ্চ ১০০ অক্ষরের হতে পারবে।");
+      toast.error("নাম সর্বোচ্চ ১০০ অক্ষরের হতে পারবে।");
       return;
     }
 
     if (trimmedName === user?.name) {
-      setSuccess("আপনার তথ্যে কোনো পরিবর্তন করা হয়নি।");
+      toast("আপনার তথ্যে কোনো পরিবর্তন করা হয়নি।", {
+        icon: "ℹ️",
+      });
       return;
     }
 
     setIsSaving(true);
+    const toastId = toast.loading("নাম আপডেট হচ্ছে...");
 
     try {
       const { error: updateError } = await authClient.updateUser({
@@ -60,37 +61,53 @@ export default function ProfilePage() {
       });
 
       if (updateError) {
-        setError(
-          updateError.message || "তথ্য আপডেট করা যায়নি। আবার চেষ্টা করুন।"
+        toast.error(
+          updateError.message || "তথ্য আপডেট করা যায়নি। আবার চেষ্টা করুন।",
+          { id: toastId }
         );
         return;
       }
 
-      setSuccess("আপনার নাম সফলভাবে আপডেট হয়েছে।");
+      toast.success("আপনার নাম সফলভাবে আপডেট হয়েছে।", {
+        id: toastId,
+      });
+
       router.refresh();
     } catch {
-      setError("সার্ভারের সঙ্গে সংযোগ করা যায়নি। আবার চেষ্টা করুন।");
+      toast.error("সার্ভারের সঙ্গে সংযোগ করা যায়নি। আবার চেষ্টা করুন।", {
+        id: toastId,
+      });
     } finally {
       setIsSaving(false);
     }
   }
 
   async function handleLogout() {
-    setError("");
+    if (isSaving || isLoggingOut) return;
+
     setIsLoggingOut(true);
+    const toastId = toast.loading("সাইন আউট হচ্ছে...");
 
     try {
       const { error: logoutError } = await authClient.signOut();
 
       if (logoutError) {
-        setError("সাইন আউট করা যায়নি। আবার চেষ্টা করুন।");
+        toast.error("সাইন আউট করা যায়নি। আবার চেষ্টা করুন।", {
+          id: toastId,
+        });
         return;
       }
+
+      toast.success("সফলভাবে সাইন আউট হয়েছে।", {
+        id: toastId,
+      });
 
       router.replace("/signin");
       router.refresh();
     } catch {
-      setError("সার্ভারের সঙ্গে সংযোগ করা যায়নি।");
+      toast.error("সার্ভারের সঙ্গে সংযোগ করা যায়নি।", {
+        id: toastId,
+      });
     } finally {
       setIsLoggingOut(false);
     }
@@ -151,7 +168,9 @@ export default function ProfilePage() {
               </p>
 
               <span className="mt-3 inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-                {user.emailVerified ? "ইমেইল যাচাই করা হয়েছে" : "সক্রিয় অ্যাকাউন্ট"}
+                {user.emailVerified
+                  ? "ইমেইল যাচাই করা হয়েছে"
+                  : "সক্রিয় অ্যাকাউন্ট"}
               </span>
             </div>
           </div>
@@ -203,27 +222,9 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            {error && (
-              <p
-                role="alert"
-                className="rounded-lg bg-red-50 p-3 text-sm text-red-600"
-              >
-                {error}
-              </p>
-            )}
-
-            {success && (
-              <p
-                role="status"
-                className="rounded-lg bg-green-50 p-3 text-sm text-green-700"
-              >
-                {success}
-              </p>
-            )}
-
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || isLoggingOut}
               className="w-full rounded-lg bg-[#168442] px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? "আপডেট হচ্ছে..." : "পরিবর্তন সংরক্ষণ করুন"}
@@ -232,8 +233,8 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="w-full rounded-lg border border-red-200 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              disabled={isSaving || isLoggingOut}
+              className="w-full rounded-lg border border-red-200 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoggingOut ? "সাইন আউট হচ্ছে..." : "সাইন আউট"}
             </button>
